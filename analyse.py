@@ -6,7 +6,23 @@ import tarfile
 import threading
 
 import pyspiel
+from rich.console import Console
+from rich.text import Text
 import sgfmill.sgf
+
+console = Console()
+
+COLUMNS = "ABCDEFGHJKLMNOPQRST"
+
+
+def decode_gtp_move(move):
+    row = int(move[1:]) - 1
+    col = COLUMNS.find(move[0])
+    return (row, col)
+
+
+def encode_gtp_move(row, col):
+    return COLUMNS[col] + str(row + 1)
 
 
 class Analyser:
@@ -36,6 +52,11 @@ class Analyser:
         self._p.wait()
 
     def analyse(self, state, history, board_size, komi):
+        # Analyse the top moves by visit count, as well as all moves close to
+        # the current winrate.
+        top_n = 8
+        max_delta = 0.02
+
         if history:
             last_player = history[-1][0]
             to_play = "b" if last_player == "w" else "w"
@@ -48,8 +69,7 @@ class Analyser:
             if action == board_size ** 2:
                 move = "pass"
             else:
-                # Must be passed as a string, not a tuple.
-                move = "(%d, %d)" % (action // board_size, action % board_size)
+                move = encode_gtp_move(action // board_size, action % board_size)
 
             q = self._make_query(
                 board_size, komi, moves=history + [(to_play, move)], visits=30
@@ -59,12 +79,74 @@ class Analyser:
         # Run a long search for the overall position.
         overall = self._run(
             self._make_query(board_size, komi, moves=history, visits=1600)
-        )
+        ).result()
+        overall_winrate = overall["rootInfo"]["winrate"]
 
-        for move, f in sorted(results_by_move.items()):
-            print(move, 1 - f.result()["rootInfo"]["winrate"])
+        move_infos = sorted(overall["moveInfos"], key=lambda i: i["order"])
+        to_analyse = [i["move"] for i in move_infos[:top_n]]
 
-        print("overall", overall.result()["rootInfo"]["winrate"])
+        if overall_winrate > 0.1 and overall_winrate < 0.9:
+            # Only select moves according to value difference if the game isn't
+            # won/lost already.
+            for move, f in results_by_move.items():
+                res = f.result()
+                winrate = 1 - res["rootInfo"]["winrate"]
+                if winrate > overall_winrate - max_delta:
+                    to_analyse.append(move)
+
+        # Replace the results for the most visited / highest value moves with a
+        # more detailed analysis.
+        for move in set(to_analyse):
+            q = self._make_query(
+                board_size, komi, moves=history + [(to_play, move)], visits=200
+            )
+            results_by_move[move] = self._run(q)
+
+        for f in results_by_move.values():
+            f.result()
+
+        console.print("Winrate: %.3f" % overall_winrate)
+        rows = str(state).strip().split("\n")[2:]
+        for i, row in enumerate(rows):
+            row_i = board_size - i
+            if row_i == 0:
+                break
+
+            text = Text("%2d " % row_i)
+
+            row = row.strip().split(" ")[1]
+            for col, stone in enumerate(row):
+                if stone == "X":
+                    text.append("⬤ ", style="black on #bf992a")
+                elif stone == "O":
+                    text.append("⬤ ", style="white on #bf992a")
+                else:
+                    move = encode_gtp_move(row_i - 1, col)
+                    if move in results_by_move:
+                        # Color based on change in winrate if the move were played.
+                        winrate = (
+                            1 - results_by_move[move].result()["rootInfo"]["winrate"]
+                        )
+                        # Delta will usually be negative, and at most -1, but we really only
+                        # care about the range of [0, -0.2].
+                        delta = winrate - overall_winrate
+                        x = (delta + 0.2) * 5
+                        # print(overall_winrate, winrate, delta, x)
+                        red = int(max(min(2 * (1 - x) * 255, 255), 0))
+                        green = int(max(min(2 * x * 255, 255), 0))
+
+                        # Highlight the moves we analysed with more visits using a bigger circle.
+                        letter = "⬤" if move in to_analyse else "●"
+                        text.append(
+                            letter + " ", style=f"rgb({red},{green},0) on #bf992a"
+                        )
+                    else:
+                        text.append("  ", style="white on #bf992a")
+            console.print(text)
+        console.print("   " + " ".join(COLUMNS))
+        console.print()
+
+        return overall_winrate
 
     def _make_query(self, board_size, komi, moves, visits):
         self._query_id += 1
@@ -124,15 +206,9 @@ with tarfile.open("sgfs/alphago.tgz") as f:
 
         board_size = game.get_size()
         state = pyspiel.load_game(f"go(board_size={board_size})").new_initial_state()
-
-        print(game.get_size(), game.get_komi(), game.get_handicap())
-        print([m.get_move() for m in game.get_main_sequence()[1:]])
-
         history = []
 
         analyser.analyse(state, history, board_size, game.get_komi())
-
-        break
 
         for node in game.get_main_sequence()[1:]:
             color, point = node.get_move()
@@ -143,7 +219,12 @@ with tarfile.open("sgfs/alphago.tgz") as f:
             else:
                 row, col = point
                 action = row * board_size + col
-                history.append((color, (row, col)))
+                history.append((color, encode_gtp_move(row, col)))
 
             state.apply_action(action)
-            analyser.analyse(state, history, board_size, game.get_komi())
+            winrate = analyser.analyse(state, history, board_size, game.get_komi())
+
+            if winrate < 0.05 or winrate > 0.95:
+                break
+
+        break
