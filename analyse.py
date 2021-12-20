@@ -4,7 +4,9 @@ import os
 import subprocess
 import tarfile
 import threading
+from typing import NamedTuple, Tuple
 
+from matplotlib import cm
 import pyspiel
 from rich.console import Console
 from rich.text import Text
@@ -15,18 +17,52 @@ console = Console()
 COLUMNS = "ABCDEFGHJKLMNOPQRST"
 
 
-def decode_gtp_move(move):
+class RGBA(NamedTuple):
+    red: int
+    green: int
+    blue: int
+    alpha: int = 255
+
+    @property
+    def hex(self) -> str:
+        return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
+
+    def blend(self, back: "RGBA") -> "RGBA":
+        return RGBA(
+            alpha=(255 - (255 - back.alpha) * (255 - self.alpha) // 255),
+            red=(back.red * (255 - self.alpha) + self.red * self.alpha) // 255,
+            green=(back.green * (255 - self.alpha) + self.green * self.alpha) // 255,
+            blue=(back.blue * (255 - self.alpha) + self.blue * self.alpha) // 255,
+        )
+
+
+def decode_gtp_move(move: str) -> Tuple[int, int]:
     row = int(move[1:]) - 1
     col = COLUMNS.find(move[0])
     return (row, col)
 
 
-def encode_gtp_move(row, col):
+def encode_gtp_move(row: int, col: int) -> str:
     return COLUMNS[col] + str(row + 1)
 
 
+_COLOR_STEPS = 100
+_COLOR_MAP = cm.get_cmap("RdYlGn", _COLOR_STEPS)
+
+
+def delta_as_color(delta: float, max_delta: float) -> RGBA:
+    x = (delta + max_delta) / max_delta
+    r, g, b, _ = _COLOR_MAP(int(x * _COLOR_STEPS))
+    return RGBA(
+        int(r * 255),
+        int(g * 255),
+        int(b * 255),
+        alpha=max(0, min(255, 75 + int(180 * x))),
+    )
+
+
 class Analyser:
-    def __init__(self, katago_path, model_path):
+    def __init__(self, katago_path: str, model_path: str):
         self._query_id = 0
         self._outstanding = {}
         self._p = subprocess.Popen(
@@ -51,7 +87,7 @@ class Analyser:
         self._p.kill()
         self._p.wait()
 
-    def analyse(self, state, history, board_size, komi):
+    def analyse(self, state, history, board_size: int, komi: float) -> float:
         # Analyse the top moves by visit count, as well as all moves close to
         # the current winrate.
         top_n = 8
@@ -72,7 +108,7 @@ class Analyser:
                 move = encode_gtp_move(action // board_size, action % board_size)
 
             q = self._make_query(
-                board_size, komi, moves=history + [(to_play, move)], visits=30
+                board_size, komi, moves=history + [(to_play, move)], visits=15
             )
             results_by_move[move] = self._run(q)
 
@@ -105,7 +141,14 @@ class Analyser:
         for f in results_by_move.values():
             f.result()
 
-        console.print("Winrate: %.3f" % overall_winrate)
+        self._print_results(state, history, overall_winrate, results_by_move)
+        return overall_winrate
+
+    def _print_results(self, state, history, overall_winrate: float, results_by_move):
+        max_delta = 0.1
+        bg_color = RGBA(191, 153, 42)
+        console.print("Move %3d - winrate: %.3f" % (len(history), overall_winrate))
+        console.print()
         rows = str(state).strip().split("\n")[2:]
         for i, row in enumerate(rows):
             row_i = board_size - i
@@ -116,10 +159,13 @@ class Analyser:
 
             row = row.strip().split(" ")[1]
             for col, stone in enumerate(row):
+                bg = bg_color
+                if history and encode_gtp_move(row_i - 1, col) == history[-1][1]:
+                    bg = RGBA(77, 172, 255)
                 if stone == "X":
-                    text.append("⬤ ", style="black on #bf992a")
+                    text.append("⚫", style=f"black on {bg.hex}")
                 elif stone == "O":
-                    text.append("⬤ ", style="white on #bf992a")
+                    text.append("⚪", style=f"white on {bg.hex}")
                 else:
                     move = encode_gtp_move(row_i - 1, col)
                     if move in results_by_move:
@@ -130,23 +176,25 @@ class Analyser:
                         # Delta will usually be negative, and at most -1, but we really only
                         # care about the range of [0, -0.2].
                         delta = winrate - overall_winrate
-                        x = (delta + 0.2) * 5
-                        # print(overall_winrate, winrate, delta, x)
-                        red = int(max(min(2 * (1 - x) * 255, 255), 0))
-                        green = int(max(min(2 * x * 255, 255), 0))
+                        bg = delta_as_color(delta, max_delta).blend(bg)
 
-                        # Highlight the moves we analysed with more visits using a bigger circle.
-                        letter = "⬤" if move in to_analyse else "●"
-                        text.append(
-                            letter + " ", style=f"rgb({red},{green},0) on #bf992a"
-                        )
+                    if row_i in [4, 10, 16] and col in [3, 9, 15]:
+                        text.append("• ", style=f"black on {bg.hex}")
                     else:
-                        text.append("  ", style="white on #bf992a")
+                        text.append("  ", style=f"white on {bg.hex}")
             console.print(text)
         console.print("   " + " ".join(COLUMNS))
         console.print()
-
-        return overall_winrate
+        console.print(" Δ winrate: ")
+        scale = Text(f"-{max_delta:.1f} ")
+        width = 2 * board_size
+        for i in range(width + 1):
+            bg = delta_as_color(max_delta * (i - width) / width, max_delta).blend(bg)
+            scale.append(" ", style=f"white on {bg.hex}")
+        scale.append(" +0")
+        console.print(scale)
+        console.print()
+        console.print()
 
     def _make_query(self, board_size, komi, moves, visits):
         self._query_id += 1
@@ -192,6 +240,7 @@ analyser = Analyser(
     "/home/mononofu/katago/katago",
     "/home/mononofu/katago/kata1-b40c256-s10499183872-d2559211369.bin.gz",
 )
+print("\n" * 6)
 
 
 with tarfile.open("sgfs/alphago.tgz") as f:
@@ -222,8 +271,8 @@ with tarfile.open("sgfs/alphago.tgz") as f:
                 history.append((color, encode_gtp_move(row, col)))
 
             state.apply_action(action)
-            winrate = analyser.analyse(state, history, board_size, game.get_komi())
 
+            winrate = analyser.analyse(state, history, board_size, game.get_komi())
             if winrate < 0.05 or winrate > 0.95:
                 break
 
