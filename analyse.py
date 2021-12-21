@@ -108,7 +108,7 @@ class Analyser:
                 move = encode_gtp_move(action // board_size, action % board_size)
 
             q = self._make_query(
-                board_size, komi, moves=history + [(to_play, move)], visits=15
+                board_size, komi, moves=history + [(to_play, move)], visits=25
             )
             results_by_move[move] = self._run(q)
 
