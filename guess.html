@@ -92,7 +92,11 @@
         player.board.addEventListener('click', (x, y) => {
             if (selectedLocation) {
                 selectedLocation = null;
-                showMove(curMove + 1);
+                if (curMove + 1 == curData['winrate'].length) {
+                    sampleGame()
+                } else {
+                    showMove(curMove + 1);
+                }
                 return;
             }
             selectedLocation = { x: x, y: y };
