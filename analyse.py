@@ -274,12 +274,13 @@ analyser = Analyser(
 print("\n" * 6)
 
 
-with tarfile.open("sgfs/alphago.tgz") as f:
-    for name in f.getnames():
+with tarfile.open("sgfs/alphago.tgz") as tar:
+    for name in tar.getnames():
         if not name.endswith(".sgf"):
             continue
-        sgf = f.extractfile(name).read()
+        print("analysing", name, "\n")
 
+        sgf = tar.extractfile(name).read()
         game = sgfmill.sgf.Sgf_game.from_bytes(sgf)
         strip_variations(game)
         strip_comments(game)
@@ -303,7 +304,7 @@ with tarfile.open("sgfs/alphago.tgz") as f:
         )
         encode_results(analysed, winrate, results_by_move)
 
-        for node in game.get_main_sequence()[1:15]:
+        for node in game.get_main_sequence()[1:]:
             color, point = node.get_move()
             # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/go.h#L67
             if point is None:
@@ -328,4 +329,12 @@ with tarfile.open("sgfs/alphago.tgz") as f:
         with open(path, "w") as f:
             f.write(data)
 
-        break
+        index_path = "analysed/index.json"
+        if os.path.exists(index_path):
+            with open(index_path) as f:
+                index = json.load(f)
+        else:
+            index = {}
+        index[path] = name
+        with open(index_path, "w") as f:
+            json.dump(index, f, sort_keys=True, indent=2)
