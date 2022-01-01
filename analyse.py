@@ -1,10 +1,12 @@
+import base64
 from concurrent.futures import Future
+import hashlib
 import json
 import os
 import subprocess
 import tarfile
 import threading
-from typing import NamedTuple, Tuple
+from typing import Mapping, NamedTuple, Tuple
 
 from matplotlib import cm
 import pyspiel
@@ -91,7 +93,7 @@ class Analyser:
         # Analyse the top moves by visit count, as well as all moves close to
         # the current winrate.
         top_n = 8
-        max_delta = 0.02
+        max_delta = 0.03
 
         if history:
             last_player = history[-1][0]
@@ -138,11 +140,9 @@ class Analyser:
             )
             results_by_move[move] = self._run(q)
 
-        for f in results_by_move.values():
-            f.result()
-
+        results_by_move = {k: v.result() for k, v in results_by_move.items()}
         self._print_results(state, history, overall_winrate, results_by_move)
-        return overall_winrate
+        return overall_winrate, results_by_move
 
     def _print_results(self, state, history, overall_winrate: float, results_by_move):
         max_delta = 0.1
@@ -170,9 +170,7 @@ class Analyser:
                     move = encode_gtp_move(row_i - 1, col)
                     if move in results_by_move:
                         # Color based on change in winrate if the move were played.
-                        winrate = (
-                            1 - results_by_move[move].result()["rootInfo"]["winrate"]
-                        )
+                        winrate = 1 - results_by_move[move]["rootInfo"]["winrate"]
                         # Delta will usually be negative, and at most -1, but we really only
                         # care about the range of [0, -0.2].
                         delta = winrate - overall_winrate
@@ -236,6 +234,39 @@ class Analyser:
                 f.set_result(res)
 
 
+def encode_results(analysed, winrate: float, results_by_move):
+    analysed["winrate"].append(round(winrate, 4))
+
+    size = analysed["board_size"]
+    encoded = b""
+    for row in range(size):
+        for col in range(size):
+            move = encode_gtp_move(row, col)
+            if move in results_by_move:
+                q = 1 - results_by_move[move]["rootInfo"]["winrate"]
+                assert q >= 0 and q <= 1, q
+                val = int(q * (2 ** 16 - 2)) + 1
+            else:
+                val = 0
+            encoded += bytes([val // 256, val % 256])
+    analysed["q"].append(base64.b64encode(encoded).decode("utf-8"))
+
+
+def strip_variations(game: sgfmill.sgf.Sgf_game):
+    cur = game.root
+    while cur:
+        # Only keep the left-most (main) variation at each move.
+        for node in cur[1:]:
+            node.delete()
+        cur = cur[0]
+
+
+def strip_comments(game: sgfmill.sgf.Sgf_game):
+    for node in game.get_main_sequence():
+        if node.has_property("C"):
+            node.unset("C")
+
+
 analyser = Analyser(
     "/home/mononofu/katago/katago",
     "/home/mononofu/katago/kata1-b40c256-s10499183872-d2559211369.bin.gz",
@@ -248,7 +279,10 @@ with tarfile.open("sgfs/alphago.tgz") as f:
         if not name.endswith(".sgf"):
             continue
         sgf = f.extractfile(name).read()
+
         game = sgfmill.sgf.Sgf_game.from_bytes(sgf)
+        strip_variations(game)
+        strip_comments(game)
 
         if game.get_handicap() is not None:
             continue
@@ -257,9 +291,19 @@ with tarfile.open("sgfs/alphago.tgz") as f:
         state = pyspiel.load_game(f"go(board_size={board_size})").new_initial_state()
         history = []
 
-        analyser.analyse(state, history, board_size, game.get_komi())
+        analysed = {
+            "sgf": game.serialise().decode("utf-8"),
+            "board_size": board_size,
+            "winrate": [],
+            "q": [],
+        }
 
-        for node in game.get_main_sequence()[1:]:
+        winrate, results_by_move = analyser.analyse(
+            state, history, board_size, game.get_komi()
+        )
+        encode_results(analysed, winrate, results_by_move)
+
+        for node in game.get_main_sequence()[1:15]:
             color, point = node.get_move()
             # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/go.h#L67
             if point is None:
@@ -272,8 +316,16 @@ with tarfile.open("sgfs/alphago.tgz") as f:
 
             state.apply_action(action)
 
-            winrate = analyser.analyse(state, history, board_size, game.get_komi())
+            winrate, results_by_move = analyser.analyse(
+                state, history, board_size, game.get_komi()
+            )
+            encode_results(analysed, winrate, results_by_move)
             if winrate < 0.05 or winrate > 0.95:
                 break
+
+        data = json.dumps(analysed, sort_keys=True)
+        path = f"analysed/{hashlib.sha256(data.encode('utf-8')).hexdigest()}.json"
+        with open(path, "w") as f:
+            f.write(data)
 
         break
