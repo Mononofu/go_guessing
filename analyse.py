@@ -13,6 +13,7 @@ import pyspiel
 from rich.console import Console
 from rich.text import Text
 import sgfmill.sgf
+import tqdm
 
 console = Console()
 
@@ -275,7 +276,7 @@ print("\n" * 6)
 
 
 with tarfile.open("sgfs/alphago.tgz") as tar:
-    for name in tar.getnames():
+    for name in tqdm.tqdm(tar.getnames()):
         if not name.endswith(".sgf"):
             continue
         print("analysing", name, "\n")
