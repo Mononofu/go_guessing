@@ -13,6 +13,9 @@
     <script type="text/javascript">
         const MAX_DELTA = 0.1;
         const COLOR_MAP = ["165,0,38", "170,4,38", "175,9,38", "180,14,38", "185,19,38", "190,24,38", "195,29,38", "200,33,38", "205,38,38", "210,43,38", "215,48,39", "218,54,42", "221,60,44", "224,67,47", "227,73,50", "229,79,53", "232,85,56", "235,91,59", "238,97,61", "241,104,64", "244,110,67", "245,116,70", "246,123,73", "246,130,76", "247,136,79", "248,143,82", "249,149,85", "250,156,88", "251,162,91", "252,169,94", "253,175,98", "253,180,102", "253,185,106", "253,190,111", "253,195,115", "253,200,119", "253,205,123", "253,210,127", "253,215,132", "253,220,136", "254,225,141", "254,228,146", "254,231,151", "254,234,156", "254,237,162", "254,240,167", "254,244,172", "254,247,177", "254,250,183", "254,253,188", "253,254,188", "249,252,183", "245,250,177", "241,249,172", "237,247,167", "233,246,162", "230,244,156", "226,242,151", "222,241,146", "218,239,141", "213,237,137", "208,235,133", "203,233,130", "198,231,127", "193,228,123", "188,226,120", "182,224,116", "177,222,113", "172,219,110", "167,217,107", "161,215,105", "155,212,104", "148,209,104", "142,206,103", "135,203,102", "129,200,101", "122,198,101", "116,195,100", "109,192,99", "103,189,99", "95,186,97", "88,182,95", "80,178,93", "72,174,91", "65,171,89", "57,167,87", "49,163,85", "42,159,84", "34,156,82", "26,152,80", "23,147,77", "21,142,75", "18,137,72", "15,133,70", "13,128,67", "10,123,65", "7,118,62", "5,113,60", "2,108,57", "0,104,55", "0,104,55"];
+        let curData = null;
+        let curMove = 0;
+        let isShowingResult = false;
 
         var elem = document.getElementById("player");
         var player = new WGo.BasicPlayer(elem, {
@@ -20,51 +23,105 @@
             enableKeys: false,
             layout: {},
         });
-        fetch('analysed/983395ed13d9febb3280631bd7dd10f8fb22d1a047fee4b4ee7f4db2a2a8b6d2.json')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                player.loadSgf(data['sgf']);
-                const move = 13;
-                player.goTo({ m: move })
-                const size = data['board_size'];
-                const winrate = data['winrate'][move];
-                const encoded_q = atob(data['q'][move]);
-                console.log(encoded_q.length);
-                for (let row = 0; row < size; ++row) {
-                    for (let col = 0; col < size; ++col) {
-                        const i = (row * size + col) * 2;
-                        const qU16 = encoded_q.charCodeAt(i) * 255 + encoded_q.charCodeAt(i + 1);
-                        if (qU16 !== 0) {
-                            const q = qU16 / 65534;
-                            const delta = q - winrate;
 
-                            const drawHandler = {
-                                stone: {
-                                    draw: function (args, board) {
-                                        var xr = board.getX(args.x),
-                                            yr = board.getY(args.y),
-                                            sr = board.stoneRadius;
+        function showNextMove() {
+            curMove += 1;
+            player.board.removeAllObjects();
+            player.goTo({ m: 0 });
+            player.goTo({ m: curMove });
+        }
 
-                                        const rel = (delta + MAX_DELTA) / MAX_DELTA;
-                                        const i = Math.floor(Math.max(0, Math.min(rel, 1)) * (COLOR_MAP.length - 1));
-                                        const alpha = Math.max(0, Math.min(255, 75 + 180 * rel)) / 255;
+        function showResult() {
+            const size = curData['board_size'];
+            const winrate = curData['winrate'][curMove];
+            const encoded_q = atob(curData['q'][curMove]);
 
-                                        this.beginPath();
-                                        this.fillStyle = 'rgba(' + COLOR_MAP[i] + ',' + alpha + ')';
-                                        this.arc(xr - 0.5, yr - 0.5, sr - 0.5, 0, 2 * Math.PI, true);
-                                        this.fill();
-                                    }
+            for (let row = 0; row < size; ++row) {
+                for (let col = 0; col < size; ++col) {
+                    const i = (row * size + col) * 2;
+                    const qU16 = encoded_q.charCodeAt(i) * 255 + encoded_q.charCodeAt(i + 1);
+                    if (qU16 !== 0) {
+                        const q = qU16 / 65534;
+                        const delta = q - winrate;
+
+                        const drawHandler = {
+                            stone: {
+                                draw: function (args, board) {
+                                    var xr = board.getX(args.x),
+                                        yr = board.getY(args.y),
+                                        sr = board.stoneRadius;
+
+                                    const rel = (delta + MAX_DELTA) / MAX_DELTA;
+                                    const i = Math.floor(Math.max(0, Math.min(rel, 1)) * (COLOR_MAP.length - 1));
+                                    const alpha = Math.max(0, Math.min(255, 75 + 180 * rel)) / 255;
+
+                                    this.beginPath();
+                                    this.fillStyle = 'rgba(' + COLOR_MAP[i] + ',' + alpha + ')';
+                                    this.arc(xr - 0.5, yr - 0.5, sr - 0.5, 0, 2 * Math.PI, true);
+                                    this.fill();
                                 }
-                            };
-                            const pos = { x: col, y: size - row - 1 };
-                            player.board.addObject({ ...pos, type: drawHandler });
-                            if (delta > -MAX_DELTA) {
-                                player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
                             }
+                        };
+                        const pos = { x: col, y: size - row - 1 };
+                        player.board.addObject({ ...pos, type: drawHandler });
+                        if (delta > -MAX_DELTA) {
+                            player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
                         }
                     }
                 }
+            }
+        }
+
+        let selection = null;
+        player.board.addEventListener('mousemove', (x, y) => {
+            if (player.kifuReader.game && player.kifuReader.game.isValid(x, y)) {
+                if (selection) player.board.removeObject(selection);
+                selection = {
+                    x: x,
+                    y: y,
+                    type: 'outline',
+                    c: player.kifuReader.game.turn,
+                };
+                player.board.addObject(selection);
+            }
+        });
+
+        player.board.addEventListener('click', (x, y) => {
+            if (isShowingResult) {
+                isShowingResult = false;
+                showNextMove();
+                return;
+            }
+            isShowingResult = true;
+            const drawHandler = {
+                stone: {
+                    draw: function (args, board) {
+                        var xr = board.getX(args.x),
+                            yr = board.getY(args.y),
+                            sr = board.stoneRadius;
+
+                        this.beginPath();
+                        this.strokeStyle = 'blue';
+                        this.lineWidth = 4;
+                        this.arc(xr - 0.5, yr - 0.5, sr - 0.5, 0, 2 * Math.PI, true);
+                        this.stroke();
+                    }
+                }
+            };
+            player.board.addObject({
+                x: x,
+                y: y,
+                type: drawHandler,
+            });
+            showResult();
+        });
+        fetch('analysed/983395ed13d9febb3280631bd7dd10f8fb22d1a047fee4b4ee7f4db2a2a8b6d2.json')
+            .then(response => response.json())
+            .then(data => {
+                curData = data;
+                curMove = -1;
+                player.loadSgf(curData['sgf']);
+                showNextMove();
             });
     </script>
 </body>
