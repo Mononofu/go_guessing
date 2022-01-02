@@ -2,7 +2,8 @@
 <html>
 
 <head>
-    <title>My page</title>
+    <meta charset="UTF-8">
+    <title>Go Guesser</title>
     <script type="text/javascript" src="wgo/wgo.min.js"></script>
     <script type="text/javascript" src="wgo/wgo.player.min.js"></script>
     <link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" />
@@ -17,7 +18,8 @@
 
 <body>
     <div id="player" style="width: 97%; margin: 1.5%"></div>
-    <p>Click on a point of the board to make a prediction for the best move. Click anywhere to show the next move.
+    <p id='results'></p>
+    <p>Click on a point of the board to make a prediction for the best move. Click again anywhere to show the next move.
     </p>
     <p>After a prediction has been made, the change in winrate relative to the <b style="color:darkgreen">best
             move(s)</b> is shown; the selected move is circled in <b style='color:cyan'>cyan</b> while the move played
@@ -32,6 +34,7 @@
         let curData = null;
         let curMove = 0;
         let selectedLocation = null;
+        const predictionDeltas = [];
 
         var elem = document.getElementById("player");
         var player = new WGo.BasicPlayer(elem, {
@@ -96,6 +99,16 @@
                         player.board.addObject({ ...pos, type: drawHandler });
                         if (Math.round(delta * 100) != 0 && (delta > -MAX_DELTA || alwaysShow)) {
                             player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
+                        }
+
+                        if (samePos(selectedLocation, pos)) {
+                            predictionDeltas.push(delta);
+
+                            const meanDelta = predictionDeltas.reduce((a, b) => a + b) / predictionDeltas.length;
+
+                            const results = document.getElementById('results');
+                            results.innerText = 'Value Δ / move: last prediction ' + (delta * 100).toFixed(1);
+                            results.innerText += '; session average ' + (meanDelta * 100).toFixed(1);
                         }
                     }
                 }
