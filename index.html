@@ -7,15 +7,22 @@
     <script type="text/javascript" src="wgo/wgo.player.min.js"></script>
     <link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            max-width: 1000px;
+        }
+    </style>
 
 </head>
 
 <body>
-    <div id="player" style="width: 95%; max-width: 1000px; margin: 2.5%"></div>
-    <p>Click on a point of the board to make a prediction for the best move. Click again to advance to the next move.
+    <div id="player" style="width: 97%; margin: 1.5%"></div>
+    <p>Click on a point of the board to make a prediction for the best move. Click anywhere to show the next move.
     </p>
     <p>After a prediction has been made, the change in winrate relative to the <b style="color:darkgreen">best
-            move(s)</b> is shown; the selected move is circled in <b style='color:cyan'>cyan</b>.</p>
+            move(s)</b> is shown; the selected move is circled in <b style='color:cyan'>cyan</b> while the move played
+        in the original game is circled in <b style='color:blue'>dark blue</b>. If both are the same, only the selected
+        move is shown.</p>
     <p><a href="https://github.com/Mononofu/go_guessing">Source code</a> available on GitHub.</p>
     <script type="text/javascript">
         const MAX_DELTA = 0.05;
@@ -31,6 +38,7 @@
             enableWheel: false,
             enableKeys: false,
             layout: { top: ['InfoBox'] },
+            board: { background: WGo.DIR + "wood1.jpg" }
         });
 
         function showMove(m) {
@@ -38,6 +46,10 @@
             player.board.removeAllObjects();
             player.goTo({ m: 0 });
             player.goTo({ m: m });
+        }
+
+        function samePos(a, b) {
+            return a.x == b.x && a.y == b.y;
         }
 
         function showResult() {
@@ -51,6 +63,8 @@
                 winrate = Math.max(winrate, qU16 / 65534);
             }
 
+            const nextMove = player.kifuReader.node.children[0].move;
+
             for (let row = 0; row < size; ++row) {
                 for (let col = 0; col < size; ++col) {
                     const i = (row * size + col) * 2;
@@ -59,7 +73,7 @@
                         const q = qU16 / 65534;
                         const delta = q - winrate;
                         const pos = { x: col, y: size - row - 1 };
-                        const selected = selectedLocation.x == pos.x && selectedLocation.y == pos.y;
+                        const alwaysShow = samePos(selectedLocation, pos) || samePos(nextMove, pos);
 
                         const drawHandler = {
                             stone: {
@@ -70,7 +84,7 @@
 
                                     const rel = (delta + MAX_DELTA) / MAX_DELTA;
                                     const i = Math.floor(Math.max(0, Math.min(rel, 1)) * (COLOR_MAP.length - 1));
-                                    const alpha = selected ? 1 : Math.max(0, Math.min(255, 75 + 180 * rel)) / 255;
+                                    const alpha = alwaysShow ? 1 : Math.max(0, Math.min(255, 75 + 180 * rel)) / 255;
 
                                     this.beginPath();
                                     this.fillStyle = 'rgba(' + COLOR_MAP[i] + ',' + alpha + ')';
@@ -80,7 +94,7 @@
                             }
                         };
                         player.board.addObject({ ...pos, type: drawHandler });
-                        if (Math.round(delta * 100) != 0 && (delta > -MAX_DELTA || selected)) {
+                        if (Math.round(delta * 100) != 0 && (delta > -MAX_DELTA || alwaysShow)) {
                             player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
                         }
                     }
@@ -88,9 +102,14 @@
             }
         }
 
+        // Remove default event listener that would advance the game if we happen to click on the position of the next move.
+        for (const l of player.board.listeners) {
+            player.board.removeEventListener(l.type, l.callback);
+        }
+
         let selection = null;
         player.board.addEventListener('mousemove', (x, y) => {
-            if (player.kifuReader.game && player.kifuReader.game.isValid(x, y)) {
+            if (player.kifuReader && player.kifuReader.game && player.kifuReader.game.isValid(x, y)) {
                 if (selection) player.board.removeObject(selection);
                 selection = {
                     x: x,
@@ -113,9 +132,11 @@
                 return;
             }
 
-            if (!player.kifuReader.game || !player.kifuReader.game.isValid(x, y)) return;
+            if (!player.kifuReader.game || player.kifuReader.game.getStone(x, y) != 0) return;
 
             selectedLocation = { x: x, y: y };
+            showResult();
+
             const drawHandler = {
                 stone: {
                     draw: function (args, board) {
@@ -124,19 +145,15 @@
                             sr = board.stoneRadius;
 
                         this.beginPath();
-                        this.strokeStyle = 'cyan';
-                        this.lineWidth = 10;
+                        this.strokeStyle = args.color;
+                        this.lineWidth = 6;
                         this.arc(xr - 0.5, yr - 0.5, sr - 0.5, 0, 2 * Math.PI, true);
                         this.stroke();
                     }
                 }
             };
-            player.board.addObject({
-                x: x,
-                y: y,
-                type: drawHandler,
-            });
-            showResult();
+            player.board.addObject({ ...player.kifuReader.node.children[0].move, type: drawHandler, color: 'blue' });
+            player.board.addObject({ x: x, y: y, type: drawHandler, color: 'cyan' });
         });
 
 
