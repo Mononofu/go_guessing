@@ -1,4 +1,9 @@
 {
+  "0db8c062ec30bb9e8bec11c62b1af3f61da5ac4ce085fb4ea03a34a27215d00d": {
+    "analysed_moves": 76,
+    "name": "games/Kakusei/25/2.sgf",
+    "total_moves": 185
+  },
   "283f16bda8b51d5d30f051c92d490cb5cc83e50bf98ec585edd1ff18da3d194b": {
     "analysed_moves": 70,
     "name": "AlphaGo/FanHui/5.sgf",
@@ -14,15 +19,35 @@
     "name": "AlphaGo/selfplay/3c.sgf",
     "total_moves": 203
   },
+  "6b06b621d0b83d0dac2795dd9920f057a842531d09cb2099e69b3dc787d830cd": {
+    "analysed_moves": 145,
+    "name": "games/Kakusei/25/3.sgf",
+    "total_moves": 294
+  },
   "77771391a1eda56097f18cae8d3027de1892e44994283e4bdc57705d1088ad86": {
     "analysed_moves": 59,
     "name": "AlphaGo/FanHui/4.sgf",
     "total_moves": 166
   },
+  "870c6c2870c3f9ce2628350f1277e18428224cadf2a789bfa8d9f24bf923fd43": {
+    "analysed_moves": 196,
+    "name": "games/Kakusei/18/2.sgf",
+    "total_moves": 289
+  },
   "996f681134b2ea418603b42a87066f3c85496b31b1e9c7a69a34968bafad282d": {
     "analysed_moves": 100,
     "name": "AlphaGo/selfplay/2c.sgf",
     "total_moves": 173
+  },
+  "a3cadbcefcf479491cfe11be6789c0eb42f4960d00a5b76b9c1752aa73ee8545": {
+    "analysed_moves": 136,
+    "name": "games/Kakusei/25/4.sgf",
+    "total_moves": 197
+  },
+  "ba969950d963b370e4d05123b2b23b8411df002ee4ba231ee8ef87c900c5f0c4": {
+    "analysed_moves": 93,
+    "name": "games/Kakusei/25/5.sgf",
+    "total_moves": 225
   },
   "bbe9b4ee105b439e9b4ac02994ec2857db07714b833447040cc70a76439143f3": {
     "analysed_moves": 67,
@@ -38,6 +63,16 @@
     "analysed_moves": 29,
     "name": "AlphaGo/FanHui/3.sgf",
     "total_moves": 167
+  },
+  "cff0d8cb2c81f8451bc8c0f442a53551f55977e842e1107d12d0350a8191a957": {
+    "analysed_moves": 113,
+    "name": "games/Kakusei/06/C1.sgf",
+    "total_moves": 236
+  },
+  "d970336f72333b06af1ffcba87baa4b57d6871d1eb2862e73ee5c6ac93357e7e": {
+    "analysed_moves": 178,
+    "name": "games/Kakusei/25/1.sgf",
+    "total_moves": 187
   },
   "d9ca736da6d6e15589332c00379e3ca6e9256da991fd1b55b954adcfc66915a9": {
     "analysed_moves": 116,
