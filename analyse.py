@@ -19,6 +19,8 @@ console = Console()
 
 COLUMNS = "ABCDEFGHJKLMNOPQRST"
 
+INDEX_PATH = "analysed/index.json"
+
 
 class RGBA(NamedTuple):
     red: int
@@ -269,8 +271,16 @@ def strip_variations(game: sgfmill.sgf.Sgf_game):
 
 def strip_comments(game: sgfmill.sgf.Sgf_game):
     for node in game.get_main_sequence():
-        if node.has_property("C"):
-            node.unset("C")
+        for prop in ["C", "LB", "TR", "SQ", "MA", "CR"]:
+            if node.has_property(prop):
+                node.unset(prop)
+
+
+def load_index():
+    if os.path.exists(INDEX_PATH):
+        with open(INDEX_PATH) as f:
+            return json.load(f)
+    return {}
 
 
 analyser = Analyser(
@@ -279,12 +289,12 @@ analyser = Analyser(
 )
 print("\n" * 6)
 
+games_analysed = set(load_index().keys())
 
 with tarfile.open("sgfs/alphago.tgz") as tar:
     for name in tqdm.tqdm(tar.getnames()):
         if not name.endswith(".sgf"):
             continue
-        print("analysing", name, "\n")
 
         sgf = tar.extractfile(name).read()
         game = sgfmill.sgf.Sgf_game.from_bytes(sgf)
@@ -299,11 +309,18 @@ with tarfile.open("sgfs/alphago.tgz") as tar:
         history = []
 
         analysed = {
-            "sgf": game.serialise().decode("utf-8"),
+            "sgf": game.serialise(wrap=None).decode("utf-8"),
             "board_size": board_size,
             "winrate": [],
             "q": [],
         }
+        sgf_hash = hashlib.sha256(analysed["sgf"].encode("utf-8")).hexdigest()
+        analysed["sgf_hash"] = sgf_hash
+
+        if sgf_hash in games_analysed:
+            continue
+
+        print("analysing", name, sgf_hash, "\n")
 
         winrate, results_by_move = analyser.analyse(
             state, history, board_size, game.get_komi()
@@ -330,17 +347,15 @@ with tarfile.open("sgfs/alphago.tgz") as tar:
             if winrate < 0.05 or winrate > 0.95:
                 break
 
-        data = json.dumps(analysed, sort_keys=True)
-        path = f"analysed/{hashlib.sha256(data.encode('utf-8')).hexdigest()}.json"
-        with open(path, "w") as f:
-            f.write(data)
+        with open(f"analysed/{sgf_hash}.json", "w") as f:
+            json.dump(analysed, f, sort_keys=True)
 
-        index_path = "analysed/index.json"
-        if os.path.exists(index_path):
-            with open(index_path) as f:
-                index = json.load(f)
-        else:
-            index = {}
-        index[path] = name
-        with open(index_path, "w") as f:
+        index = load_index()
+        index[sgf_hash] = dict(
+            name=name,
+            analysed_moves=len(analysed["q"]),
+            total_moves=len(game.get_main_sequence()),
+        )
+        with open(INDEX_PATH, "w") as f:
             json.dump(index, f, sort_keys=True, indent=2)
+        games_analysed.add(sgf_hash)

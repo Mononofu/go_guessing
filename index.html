@@ -6,10 +6,17 @@
     <script type="text/javascript" src="wgo/wgo.min.js"></script>
     <script type="text/javascript" src="wgo/wgo.player.min.js"></script>
     <link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 </head>
 
 <body>
     <div id="player" style="width: 95%; max-width: 1000px; margin: 2.5%"></div>
+    <p>Click on a point of the board to make a prediction for the best move. Click again to advance to the next move.
+    </p>
+    <p>After a prediction has been made, the change in winrate relative to the <b style="color:darkgreen">best
+            move(s)</b> is shown; the selected move is circled in <b style='color:cyan'>cyan</b>.</p>
+    <p><a href="https://github.com/Mononofu/go_guessing">Source code</a> available on GitHub.</p>
     <script type="text/javascript">
         const MAX_DELTA = 0.05;
         const COLOR_MAP = ["165,0,38", "170,4,38", "175,9,38", "180,14,38", "185,19,38", "190,24,38", "195,29,38", "200,33,38", "205,38,38", "210,43,38", "215,48,39", "218,54,42", "221,60,44", "224,67,47", "227,73,50", "229,79,53", "232,85,56", "235,91,59", "238,97,61", "241,104,64", "244,110,67", "245,116,70", "246,123,73", "246,130,76", "247,136,79", "248,143,82", "249,149,85", "250,156,88", "251,162,91", "252,169,94", "253,175,98", "253,180,102", "253,185,106", "253,190,111", "253,195,115", "253,200,119", "253,205,123", "253,210,127", "253,215,132", "253,220,136", "254,225,141", "254,228,146", "254,231,151", "254,234,156", "254,237,162", "254,240,167", "254,244,172", "254,247,177", "254,250,183", "254,253,188", "253,254,188", "249,252,183", "245,250,177", "241,249,172", "237,247,167", "233,246,162", "230,244,156", "226,242,151", "222,241,146", "218,239,141", "213,237,137", "208,235,133", "203,233,130", "198,231,127", "193,228,123", "188,226,120", "182,224,116", "177,222,113", "172,219,110", "167,217,107", "161,215,105", "155,212,104", "148,209,104", "142,206,103", "135,203,102", "129,200,101", "122,198,101", "116,195,100", "109,192,99", "103,189,99", "95,186,97", "88,182,95", "80,178,93", "72,174,91", "65,171,89", "57,167,87", "49,163,85", "42,159,84", "34,156,82", "26,152,80", "23,147,77", "21,142,75", "18,137,72", "15,133,70", "13,128,67", "10,123,65", "7,118,62", "5,113,60", "2,108,57", "0,104,55", "0,104,55"];
@@ -23,7 +30,7 @@
         var player = new WGo.BasicPlayer(elem, {
             enableWheel: false,
             enableKeys: false,
-            layout: {},
+            layout: { top: ['InfoBox'] },
         });
 
         function showMove(m) {
@@ -35,8 +42,14 @@
 
         function showResult() {
             const size = curData['board_size'];
-            const winrate = curData['winrate'][curMove];
             const encoded_q = atob(curData['q'][curMove]);
+
+            // Show all values relative to the best move.
+            let winrate = 0;
+            for (let i = 0; i < size * size; ++i) {
+                const qU16 = encoded_q.charCodeAt(2 * i) * 255 + encoded_q.charCodeAt(2 * i + 1);
+                winrate = Math.max(winrate, qU16 / 65534);
+            }
 
             for (let row = 0; row < size; ++row) {
                 for (let col = 0; col < size; ++col) {
@@ -67,7 +80,7 @@
                             }
                         };
                         player.board.addObject({ ...pos, type: drawHandler });
-                        if (delta > -MAX_DELTA || selected) {
+                        if (Math.round(delta * 100) != 0 && (delta > -MAX_DELTA || selected)) {
                             player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
                         }
                     }
@@ -99,6 +112,9 @@
                 }
                 return;
             }
+
+            if (!player.kifuReader.game || !player.kifuReader.game.isValid(x, y)) return;
+
             selectedLocation = { x: x, y: y };
             const drawHandler = {
                 stone: {
@@ -108,8 +124,8 @@
                             sr = board.stoneRadius;
 
                         this.beginPath();
-                        this.strokeStyle = 'blue';
-                        this.lineWidth = 4;
+                        this.strokeStyle = 'cyan';
+                        this.lineWidth = 10;
                         this.arc(xr - 0.5, yr - 0.5, sr - 0.5, 0, 2 * Math.PI, true);
                         this.stroke();
                     }
@@ -133,9 +149,9 @@
 
         function sampleGame() {
             const keys = Object.keys(availableGames);
-            const path = keys[keys.length * Math.random() << 0];
+            const sgf_hash = keys[keys.length * Math.random() << 0];
 
-            fetch(path)
+            fetch('analysed/' + sgf_hash + '.json')
                 .then(response => response.json())
                 .then(data => {
                     curData = data;

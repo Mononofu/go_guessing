@@ -1,4 +1,12 @@
 {
-  "analysed/3dd5ac4ab3e7b21e8bb27976bc4f40aaafaaf9228aa7911f555759ebaa08d51e.json": "AlphaGo/selfplay/1c.sgf",
-  "analysed/5acf33428a54bb1c18619263648ff0e4d548f2000f2212e36ddacde648ee8ba3.json": "AlphaGo/selfplay/2c.sgf"
+  "45aaed195e8a79a6de6fce3d982974e08416f8cb6735df5ee14fe3663e8712d7": {
+    "analysed_moves": 226,
+    "name": "AlphaGo/selfplay/1c.sgf",
+    "total_moves": 275
+  },
+  "996f681134b2ea418603b42a87066f3c85496b31b1e9c7a69a34968bafad282d": {
+    "analysed_moves": 100,
+    "name": "AlphaGo/selfplay/2c.sgf",
+    "total_moves": 173
+  }
 }
