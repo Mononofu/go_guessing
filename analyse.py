@@ -217,7 +217,12 @@ class Analyser:
 
     def _katago_reader(self):
         while self._p.poll() is None:
-            res = json.loads(self._p.stdout.readline())
+            line = self._p.stdout.readline()
+            try:
+                res = json.loads(line)
+            except json.JSONDecodeError:
+                print("Failed to parse KataGo result: ", line)
+                continue
 
             (f, query) = self._outstanding.pop(res["id"])
             if "error" in res:
