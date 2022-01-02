@@ -1,4 +1,4 @@
-A website to practice predicting which moves are good, in the game of Go. [Try it now](https://mononofu.github.io/go_guessing/).
+A website to improve your Go playing skills by training to predict which moves are good. [Try it now](https://mononofu.github.io/go_guessing/).
 
 A traditional approach is to study games of professional players, and the moves they played. Putting this into an app, we could try to guess the next move in a game. However, this is not ideal: there can be more than one good next move, and ideally we would also like to know much worse an incorrect guess was.
 
