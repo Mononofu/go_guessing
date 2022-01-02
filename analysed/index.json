@@ -1,12 +1,47 @@
 {
+  "283f16bda8b51d5d30f051c92d490cb5cc83e50bf98ec585edd1ff18da3d194b": {
+    "analysed_moves": 70,
+    "name": "AlphaGo/FanHui/5.sgf",
+    "total_moves": 215
+  },
   "45aaed195e8a79a6de6fce3d982974e08416f8cb6735df5ee14fe3663e8712d7": {
     "analysed_moves": 226,
     "name": "AlphaGo/selfplay/1c.sgf",
     "total_moves": 275
   },
+  "50756eddbad9f19dc4b45d004412cef1279935bf0fb175471ad0564ff44d4476": {
+    "analysed_moves": 160,
+    "name": "AlphaGo/selfplay/3c.sgf",
+    "total_moves": 203
+  },
+  "77771391a1eda56097f18cae8d3027de1892e44994283e4bdc57705d1088ad86": {
+    "analysed_moves": 59,
+    "name": "AlphaGo/FanHui/4.sgf",
+    "total_moves": 166
+  },
   "996f681134b2ea418603b42a87066f3c85496b31b1e9c7a69a34968bafad282d": {
     "analysed_moves": 100,
     "name": "AlphaGo/selfplay/2c.sgf",
     "total_moves": 173
+  },
+  "bbe9b4ee105b439e9b4ac02994ec2857db07714b833447040cc70a76439143f3": {
+    "analysed_moves": 67,
+    "name": "AlphaGo/FanHui/2.sgf",
+    "total_moves": 184
+  },
+  "cc65edcaaa51a5ee34236ffff64a4e3780f073333f0d76653a8a0231eb8cfc87": {
+    "analysed_moves": 95,
+    "name": "games/Kakusei/18/1.sgf",
+    "total_moves": 117
+  },
+  "cdc8e3948c1c096653a9631c5c49bc2c5cb1d9ee7121507669cb084c10ebd1cf": {
+    "analysed_moves": 29,
+    "name": "AlphaGo/FanHui/3.sgf",
+    "total_moves": 167
+  },
+  "d9ca736da6d6e15589332c00379e3ca6e9256da991fd1b55b954adcfc66915a9": {
+    "analysed_moves": 116,
+    "name": "games/Kakusei/18/3.sgf",
+    "total_moves": 263
   }
 }

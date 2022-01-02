@@ -291,7 +291,7 @@ print("\n" * 6)
 
 games_analysed = set(load_index().keys())
 
-with tarfile.open("sgfs/alphago.tgz") as tar:
+with tarfile.open("sgfs/games.tgz") as tar:
     for name in tqdm.tqdm(tar.getnames()):
         if not name.endswith(".sgf"):
             continue
