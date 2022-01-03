@@ -59,6 +59,9 @@
     </p>
     <p>Available Games:</p>
     <ul id="game-list"></ul>
+    <p>Note: Only the initial part of each game where the winrate estimate is greater than 5% and less than 95% is
+        available for guessing. For more extreme winrates even bad moves (giving away points) may not lead to a
+        noticeable change in winrate, as the game is won/lost anyways.</p>
 
     <script type="text/javascript">
         const MAX_DELTA = 0.05;
@@ -270,7 +273,10 @@
                         cur.appendChild(li);
                         if (part.endsWith('.sgf')) {
                             label.innerText += ": " + info['total_moves'] + ' moves, ' + info['analysed_moves'] + ' analysed';
-                            label.addEventListener('click', ev => loadGame(sgfHash, 10));
+                            label.addEventListener('click', ev => {
+                                loadGame(sgfHash, 10);
+                                ev.preventDefault();
+                            });
                         } else {
                             const ul = document.createElement('ul');
                             ul.classList.add('collapsed');
