@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tarfile
 import threading
 from typing import Mapping, NamedTuple, Tuple
@@ -224,7 +225,7 @@ class Analyser:
                 res = json.loads(line)
             except json.JSONDecodeError:
                 print("Failed to parse KataGo result: ", line)
-                continue
+                sys.exit(1)
 
             (f, query) = self._outstanding.pop(res["id"])
             if "error" in res:
