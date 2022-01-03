@@ -16,11 +16,11 @@ from rich.text import Text
 import sgfmill.sgf
 import tqdm
 
+import utils
+
 console = Console()
 
 COLUMNS = "ABCDEFGHJKLMNOPQRST"
-
-INDEX_PATH = "analysed/index.json"
 
 
 class RGBA(NamedTuple):
@@ -277,20 +277,13 @@ def strip_comments(game: sgfmill.sgf.Sgf_game):
                 node.unset(prop)
 
 
-def load_index():
-    if os.path.exists(INDEX_PATH):
-        with open(INDEX_PATH) as f:
-            return json.load(f)
-    return {}
-
-
 analyser = Analyser(
     "/home/mononofu/katago/katago",
     "/home/mononofu/katago/kata1-b40c256-s10499183872-d2559211369.bin.gz",
 )
 print("\n" * 6)
 
-games_analysed = set(load_index().keys())
+games_analysed = set(utils.load_index().keys())
 
 with tarfile.open("sgfs/games.tgz") as tar:
     for name in tqdm.tqdm(tar.getnames()):
@@ -351,12 +344,11 @@ with tarfile.open("sgfs/games.tgz") as tar:
         with open(f"analysed/{sgf_hash}.json", "w") as f:
             json.dump(analysed, f, sort_keys=True)
 
-        index = load_index()
+        index = utils.load_index()
         index[sgf_hash] = dict(
             name=name,
             analysed_moves=len(analysed["q"]),
             total_moves=len(game.get_main_sequence()),
         )
-        with open(INDEX_PATH, "w") as f:
-            json.dump(index, f, sort_keys=True, indent=2)
+        utils.save_index(index)
         games_analysed.add(sgf_hash)
