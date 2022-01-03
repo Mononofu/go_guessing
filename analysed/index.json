@@ -1,4 +1,14 @@
 {
+  "05563b3e181286443fa52f1e9a88508d52697997f6115ddabba40893953c2b85": {
+    "analysed_moves": 100,
+    "name": "games/Kakusei/17/3.sgf",
+    "total_moves": 247
+  },
+  "06d7bde1a869e5ecd5c05e69c5a22046ac132ac670ec8f48c6b2957d44399842": {
+    "analysed_moves": 49,
+    "name": "games/Kakusei/17/4.sgf",
+    "total_moves": 274
+  },
   "0db8c062ec30bb9e8bec11c62b1af3f61da5ac4ce085fb4ea03a34a27215d00d": {
     "analysed_moves": 76,
     "name": "games/Kakusei/25/2.sgf",
@@ -14,20 +24,35 @@
     "name": "games/Kakusei/11/7.sgf",
     "total_moves": 256
   },
+  "1a4c3c45503fbb3f0e8ad247756e2326335b56f49359d149a80411680266663c": {
+    "analysed_moves": 136,
+    "name": "games/Kakusei/11/8.sgf",
+    "total_moves": 217
+  },
   "1d7b723cca1fa9839f706bb20fc021d9e048e9de4daf4c9d485a02db66c73e5e": {
     "analysed_moves": 179,
     "name": "games/Kakusei/11/4.sgf",
     "total_moves": 275
   },
+  "1e286be499ddf70a349b07c1ceaa8c6285c3c59de622dba3947edc357f7043a4": {
+    "analysed_moves": 147,
+    "name": "games/Kakusei/Title/F09.sgf",
+    "total_moves": 271
+  },
   "283f16bda8b51d5d30f051c92d490cb5cc83e50bf98ec585edd1ff18da3d194b": {
     "analysed_moves": 70,
-    "name": "AlphaGo/FanHui/5.sgf",
+    "name": "games/AlphaGo/FanHui/5.sgf",
     "total_moves": 215
   },
   "28644ac0482aae42ba7fc69051c84bd51389ddd6468ef0e739c39c4a79b3633f": {
     "analysed_moves": 87,
     "name": "games/Kakusei/14/3.sgf",
     "total_moves": 218
+  },
+  "2b483302ae9157b9b297b47e7b64bacaf9754cb91de0f058f42948e1c1c8030d": {
+    "analysed_moves": 117,
+    "name": "games/Kakusei/19/2.sgf",
+    "total_moves": 257
   },
   "449b85b83ad0afbc457db765c02924cfa06f207c5b1361bf360c384774989475": {
     "analysed_moves": 70,
@@ -36,22 +61,37 @@
   },
   "45aaed195e8a79a6de6fce3d982974e08416f8cb6735df5ee14fe3663e8712d7": {
     "analysed_moves": 226,
-    "name": "AlphaGo/selfplay/1c.sgf",
+    "name": "games/AlphaGo/selfplay/1c.sgf",
     "total_moves": 275
   },
   "50756eddbad9f19dc4b45d004412cef1279935bf0fb175471ad0564ff44d4476": {
     "analysed_moves": 160,
-    "name": "AlphaGo/selfplay/3c.sgf",
+    "name": "games/AlphaGo/selfplay/3c.sgf",
     "total_moves": 203
+  },
+  "5cc63c59311522a263d31d18012233a9c65de11e113643068125309f2fd09478": {
+    "analysed_moves": 99,
+    "name": "games/Kakusei/19/1.sgf",
+    "total_moves": 255
+  },
+  "65aedbaa0f63b21d4343c315d68a288c39b9797642a64dd3e7744decd18fe994": {
+    "analysed_moves": 126,
+    "name": "games/Kakusei/19/3.sgf",
+    "total_moves": 217
   },
   "6b06b621d0b83d0dac2795dd9920f057a842531d09cb2099e69b3dc787d830cd": {
     "analysed_moves": 145,
     "name": "games/Kakusei/25/3.sgf",
     "total_moves": 294
   },
+  "70f798e0cdc941dd0063340ea1fd74d2a7cbd8a8a0a0d5e9dc570d7269ea8401": {
+    "analysed_moves": 60,
+    "name": "games/Kakusei/11/6.sgf",
+    "total_moves": 269
+  },
   "77771391a1eda56097f18cae8d3027de1892e44994283e4bdc57705d1088ad86": {
     "analysed_moves": 59,
-    "name": "AlphaGo/FanHui/4.sgf",
+    "name": "games/AlphaGo/FanHui/4.sgf",
     "total_moves": 166
   },
   "870c6c2870c3f9ce2628350f1277e18428224cadf2a789bfa8d9f24bf923fd43": {
@@ -59,15 +99,25 @@
     "name": "games/Kakusei/18/2.sgf",
     "total_moves": 289
   },
+  "9211c597f2a68fff6fc4fc94b9b4a38d41372974805fef5b0ac63849329813e9": {
+    "analysed_moves": 113,
+    "name": "games/Kakusei/Title/F08.sgf",
+    "total_moves": 212
+  },
   "996f681134b2ea418603b42a87066f3c85496b31b1e9c7a69a34968bafad282d": {
     "analysed_moves": 100,
-    "name": "AlphaGo/selfplay/2c.sgf",
+    "name": "games/AlphaGo/selfplay/2c.sgf",
     "total_moves": 173
   },
   "9bf68d96bf3ba6e4d2bb45a8176387d09c1c37d61edc398c17be6464196783fc": {
     "analysed_moves": 72,
     "name": "games/Kakusei/06/01.sgf",
     "total_moves": 268
+  },
+  "9ff5bf8a2586cf29a8b7e6d7a53ba628d587b26196a23e9662816d86339af68b": {
+    "analysed_moves": 124,
+    "name": "games/Kakusei/17/2.sgf",
+    "total_moves": 208
   },
   "a3cadbcefcf479491cfe11be6789c0eb42f4960d00a5b76b9c1752aa73ee8545": {
     "analysed_moves": 136,
@@ -91,7 +141,7 @@
   },
   "bbe9b4ee105b439e9b4ac02994ec2857db07714b833447040cc70a76439143f3": {
     "analysed_moves": 67,
-    "name": "AlphaGo/FanHui/2.sgf",
+    "name": "games/AlphaGo/FanHui/2.sgf",
     "total_moves": 184
   },
   "cc65edcaaa51a5ee34236ffff64a4e3780f073333f0d76653a8a0231eb8cfc87": {
@@ -106,7 +156,7 @@
   },
   "cdc8e3948c1c096653a9631c5c49bc2c5cb1d9ee7121507669cb084c10ebd1cf": {
     "analysed_moves": 29,
-    "name": "AlphaGo/FanHui/3.sgf",
+    "name": "games/AlphaGo/FanHui/3.sgf",
     "total_moves": 167
   },
   "cff0d8cb2c81f8451bc8c0f442a53551f55977e842e1107d12d0350a8191a957": {
@@ -118,6 +168,11 @@
     "analysed_moves": 106,
     "name": "games/Kakusei/14/1.sgf",
     "total_moves": 256
+  },
+  "d5bbb61d5e869be2d0ae3240421ea6170df72fa701d4ae4d0262a825501a0fa7": {
+    "analysed_moves": 86,
+    "name": "games/Kakusei/Title/F18.sgf",
+    "total_moves": 271
   },
   "d970336f72333b06af1ffcba87baa4b57d6871d1eb2862e73ee5c6ac93357e7e": {
     "analysed_moves": 178,
@@ -133,5 +188,15 @@
     "analysed_moves": 182,
     "name": "games/Kakusei/11/2.sgf",
     "total_moves": 209
+  },
+  "f8714f89b5c2f85896e298219d7a8ee2546d3699d46ca27c4a9cf32faf6e8a8f": {
+    "analysed_moves": 87,
+    "name": "games/Kakusei/Title/F20.sgf",
+    "total_moves": 192
+  },
+  "fbeccd484ebb2e11ef195759d19a8470e863bc3bea8efab81816b4c12cad53d4": {
+    "analysed_moves": 118,
+    "name": "games/Kakusei/17/1.sgf",
+    "total_moves": 119
   }
 }
