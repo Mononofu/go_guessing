@@ -11,15 +11,41 @@
     <style>
         body {
             max-width: 1000px;
+            padding: 3%;
+            margin: auto;
+        }
+
+        .collapsed {
+            display: none;
+        }
+
+        #game-list {
+            cursor: pointer;
+        }
+
+        li {
+            list-style-type: '- ';
+        }
+
+        .folder-closed {
+            list-style-type: '▸ ';
+        }
+
+        .folder-expanded {
+            list-style-type: '▾ ';
         }
     </style>
 
 </head>
 
 <body>
-    <div id="player" style="width: 97%; margin: 1.5%"></div>
+    <div id="player" style="width: 100%"></div>
     <p id='results'></p>
-    <button onclick="javascript:sampleGame()">Random Position</button>
+    <div style="display: flex; width: 100%">
+        Move:&nbsp;<span id='move-number'></span>&nbsp;&nbsp;<input type="range" id='move-slider' min=0
+            style="vertical-align:middle;">
+        <button onclick="javascript:sampleGame()" style="margin-left: auto;">Random Game</button>
+    </div>
     <p>Click on a point of the board to make a prediction for the best move. Click again anywhere to show the next move.
     </p>
     <p>After a prediction has been made, the change in winrate relative to the <b style="color:darkgreen">best
@@ -31,6 +57,9 @@
         and <a href="https://homepages.cwi.nl/~aeb/go/games/games/">professional Go games</a>. Contact:
         <a href="mailto:go@furidamu.org">go@furidamu.org</a>
     </p>
+    <p>Available Games:</p>
+    <ul id="game-list"></ul>
+
     <script type="text/javascript">
         const MAX_DELTA = 0.05;
 
@@ -59,6 +88,8 @@
             player.goTo({ m: 0 });
             player.goTo({ m: m });
             document.location.hash = curData['sgf_hash'] + '.' + m;
+            document.getElementById('move-number').innerText = m + ' / ' + (curData['q'].length - 1);
+            document.getElementById('move-slider').value = m;
         }
 
         function samePos(a, b) {
@@ -117,8 +148,8 @@
                             const meanDelta = predictionDeltas.reduce((a, b) => a + b) / predictionDeltas.length;
 
                             const results = document.getElementById('results');
-                            results.innerText = 'Value Δ / move: last prediction ' + (delta * 100).toFixed(1);
-                            results.innerText += '; session average ' + (meanDelta * 100).toFixed(1);
+                            results.innerText = 'Value Δ / move: last guess ' + (delta * 100).toFixed(1);
+                            results.innerText += '; average ' + (meanDelta * 100).toFixed(1);
                         }
                     }
                 }
@@ -147,7 +178,7 @@
         player.board.addEventListener('click', (x, y) => {
             if (selectedLocation) {
                 selectedLocation = null;
-                if (curMove + 1 == curData['winrate'].length) {
+                if (curMove + 1 >= curData['winrate'].length) {
                     sampleGame()
                 } else {
                     showMove(curMove + 1);
@@ -180,6 +211,10 @@
         });
 
 
+        document.getElementById('move-slider').addEventListener('change', ev => {
+            showMove(Number(ev.target.value));
+        })
+
         fetch('analysed/index.json')
             .then(response => response.json())
             .then(data => {
@@ -190,6 +225,7 @@
                 } else {
                     sampleGame();
                 }
+                showGameList(availableGames);
             });
 
         function sampleGame() {
@@ -203,9 +239,63 @@
                 .then(data => {
                     curData = data;
                     player.loadSgf(curData['sgf']);
-                    if (move === undefined) move = curData['winrate'].length * Math.random() << 0;
+                    if (move === undefined) move = curData['q'].length * Math.random() << 0;
+                    document.getElementById('move-slider').max = curData['q'].length - 1;
                     showMove(move);
                 });
+        }
+
+        function showGameList(games) {
+            const gameList = document.getElementById('game-list');
+            const elems = {};
+
+            const gamesArray = [];
+            for (const [sgfHash, info] of Object.entries(games)) {
+                gamesArray.push([sgfHash, info]);
+            }
+            gamesArray.sort(([keyA, infoA], [keyB, infoB]) => infoA['name'].localeCompare(infoB['name']));
+
+            for (const [sgfHash, info] of gamesArray) {
+                let cur = gameList;
+                for (const part of info['name'].split('/')) {
+                    if (part == 'games') continue;
+
+                    if (part in elems) {
+                        cur = elems[part];
+                    } else {
+                        const li = document.createElement("li");
+                        const label = document.createElement('span');
+                        label.innerText = part;
+                        li.appendChild(label);
+                        cur.appendChild(li);
+                        if (part.endsWith('.sgf')) {
+                            label.innerText += ": " + info['total_moves'] + ' moves, ' + info['analysed_moves'] + ' analysed';
+                            label.addEventListener('click', ev => loadGame(sgfHash, 10));
+                        } else {
+                            const ul = document.createElement('ul');
+                            ul.classList.add('collapsed');
+                            li.appendChild(ul);
+                            li.classList.add('folder-closed');
+                            label.addEventListener('click', ev => toggleCollapsed(ul, li));
+                            cur = ul;
+                            elems[part] = ul;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        function toggleCollapsed(ul, li) {
+            if (ul.classList.contains('collapsed')) {
+                ul.classList.remove('collapsed');
+                li.classList.remove('folder-closed');
+                li.classList.add('folder-expanded');
+            } else {
+                ul.classList.add('collapsed');
+                li.classList.remove('folder-expanded');
+                li.classList.add('folder-closed');
+            }
         }
 
     </script>
