@@ -48,10 +48,17 @@
     </div>
     <p>Click on a point of the board to make a prediction for the best move. Click again anywhere to show the next move.
     </p>
-    <p>After a prediction has been made, the change in winrate relative to the <b style="color:darkgreen">best
-            move(s)</b> is shown; the selected move is circled in <b style='color:cyan'>cyan</b> while the move played
-        in the original game is circled in <b style='color:blue'>dark blue</b>. If both are the same, only the selected
-        move is shown.</p>
+    <p>After a prediction has been made, the change in winrate relative to the move played in the game (circled in <b
+            style='color:blue'>dark blue</b>) is shown using round overlays: from <b style="color:rgb(0,104,55)">best
+            ⬤</b> over <b style="color:rgb(122,198,101)">reasonable ⬤</b> and <b
+            style="color:rgb(253,175,98)">questionable ⬤</b> to
+        <b style="color:rgb(165,0,38)">worst ⬤</b>. The
+        selected move is circled in
+        <b style='color:cyan'>cyan</b>; if the selected and played moves are identical only the <b
+            style='color:cyan'>cyan</b> circle is shown.
+    </p>
+    <p>A positive number means the selected move was better than the one played in the original game (according to the
+        KataGo value estimate), a negative number means it was worse.</p>
     <p><a href="https://github.com/Mononofu/go_guessing">Source code</a> available on GitHub. Built using <a
             href="http://wgo.waltheri.net/">WGo.js</a>, <a href="https://github.com/lightvector/KataGo">KataGo</a>,
         and <a href="https://homepages.cwi.nl/~aeb/go/games/games/">professional Go games</a>. Contact:
@@ -102,15 +109,18 @@
         function showResult() {
             const size = curData['board_size'];
             const encoded_q = atob(curData['q'][curMove]);
-
-            // Show all values relative to the best move.
-            let winrate = 0;
-            for (let i = 0; i < size * size; ++i) {
-                const qU16 = encoded_q.charCodeAt(2 * i) * 255 + encoded_q.charCodeAt(2 * i + 1);
-                winrate = Math.max(winrate, qU16 / 65534);
-            }
-
             const nextMove = player.kifuReader.node.children[0].move;
+
+            // Show all values relative to move played in the game.
+            let winrate = 0;
+            for (let row = 0; row < size; ++row) {
+                for (let col = 0; col < size; ++col) {
+                    const i = (row * size + col) * 2;
+                    const qU16 = encoded_q.charCodeAt(i) * 255 + encoded_q.charCodeAt(i + 1);
+                    if (samePos(nextMove, { x: col, y: size - row - 1 }))
+                        winrate = qU16 / 65534;
+                }
+            }
 
             for (let row = 0; row < size; ++row) {
                 for (let col = 0; col < size; ++col) {
@@ -142,7 +152,9 @@
                         };
                         player.board.addObject({ ...pos, type: drawHandler });
                         if (Math.round(delta * 100) != 0 && (delta > -MAX_DELTA || alwaysShow)) {
-                            player.board.addObject({ ...pos, type: 'LB', text: (delta * 100).toFixed(0) });
+                            let s = (delta * 100).toFixed(0);
+                            if (delta > 0) s = '+' + s;
+                            player.board.addObject({ ...pos, type: 'LB', text: s });
                         }
 
                         if (samePos(selectedLocation, pos)) {
